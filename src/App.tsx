@@ -1,54 +1,58 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
+import { useRef, useState } from "react";
+import { selectFile } from "./helpers/select-file";
+
+const ERROR_MESSAGE = "Incorrect file";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [outputPath, setOutputPath] = useState("");
+  const [loading, setLoading] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  async function start(targetPath?: string) {
+    setLoading(true);
+    if (timer.current) clearTimeout(timer.current);
+    setOutputPath("");
 
-  async function start() {
-      await invoke("start", {})
+    const response = await invoke("start", { targetPath });
+    console.log(response);
+    setLoading(false);
+    setOutputPath(String(response));
+    
+    // timer.current = setTimeout(() => setOutputPath(""), 7500);
   }
 
   return (
     <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+      <h1>Группировка данных</h1>
+
+      <p>Выберите файл для создания отчета</p>
 
       <div className="row">
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
+        <button
+          onClick={async (e) => {
+            e.preventDefault();
+            const filePath = await selectFile();
+            if (!filePath) return;
 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-          start();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
+            start(filePath);
+          }}
+        >
+          Выбрать файл
+        </button>
+      </div>
+
+      {
+        loading && <div className="loading">Идет формирование отчета...</div>
+      }
+
+      {outputPath &&
+        (outputPath === ERROR_MESSAGE ? (
+          <div className="result error">Неверный формат файла</div>
+        ) : (
+          <div className="result"> Отчет создан - {outputPath}</div>
+        ))}
     </main>
   );
 }

@@ -91,8 +91,21 @@ button {
   outline: none;
 }
 
-#greet-input {
-  margin-right: 5px;
+.result {
+  width: fit-content;
+  margin: 16px auto 0;
+  padding: 10px;
+
+  border: 1px solid #535bf2;
+  border-radius: 4px;
+}
+
+.loading {
+  margin-top: 16px;
+}
+
+.error {
+  border-color: red;
 }
 
 @media (prefers-color-scheme: dark) {
