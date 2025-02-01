@@ -36,7 +36,7 @@ jobs:
 
       # Шаг 5: Сборка Tauri приложения
       - name: Build Tauri app
-        run: npm run tauri build -- --target aarch64-apple-darwin
+        run: npm run tauri build 
 
       # Шаг 6: Сохранение собранного приложения как артефакта
       - name: Upload artifact
