@@ -29,6 +29,13 @@ jobs:
         with:
           toolchain: stable
           override: true
+          targets: aarch64-apple-darwin
+      
+      - name: Build Tauri app for Apple Silicon
+        run: |
+          rustup target add aarch64-apple-darwin
+          npm run tauri build -- --target aarch64-apple-darwin
+    
 
       # Шаг 4: Установка зависимостей
       - name: Install dependencies
@@ -40,7 +47,7 @@ jobs:
 
       # Шаг 6: Сохранение собранного приложения как артефакта
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: tauri-macos
           path: src-tauri/target/release/bundle/
