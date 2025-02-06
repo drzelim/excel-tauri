@@ -1,6 +1,6 @@
 use crate::{
-    helpers::{extract_date_from_row, naive_datetime_to_excel_days},
-    models::Employee,
+    helpers::{extract_date_from_row, naive_datetime_to_excel_days, sum_duration},
+    models::{Employee, Task},
 };
 use std::{fs, path::PathBuf};
 use std::{collections::HashMap, path::Path};
@@ -32,19 +32,6 @@ pub fn read_files(path: &Path) -> Result<Vec<Employee>, XlsxError> {
                 if first_row_cell == "" || row.is_empty() {
                     continue;
                 }
-    
-                // let name = row[6].get_string().unwrap_or("").to_string();
-                // let duration = row[7].get_float().unwrap_or(0.0) as f32;
-                // let task_name = row[3].get_string().unwrap_or("").to_string();
-                // let date = extract_date_from_row(&row[5].clone()).unwrap_or_default();
-                // let description = row[8].get_string().unwrap_or("").to_string();
-
-                // let name = match row.get(6) {
-                //     Some(s) => s.get_string().unwrap_or("").to_string(),
-                //     None => {
-                //         "".to_string()  // Можно вернуть пустую строку или обработать иначе
-                //     }
-                // };
 
                 let name = row.get(6).unwrap().get_string().unwrap_or_default().to_string();
                 let duration = row.get(7).unwrap().get_float().unwrap_or(0.0) as f32;
@@ -103,7 +90,7 @@ fn wtire_employees(worksheet: &mut Worksheet, employees: &Vec<Employee>, offset:
 
 pub fn save_grouped_employees(
     titles: &Vec<String>,
-    tasks: &HashMap<String, HashMap<String, Vec<Employee>>>,
+    tasks: &HashMap<String, Task>,
     path: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut workbook = Workbook::new();
@@ -142,13 +129,16 @@ pub fn save_grouped_employees(
 
     for key in keys {
         count += 1;
-        worksheet.merge_range(count, 0, count, 4, &key, &task_format)?;
-        // worksheet.write_with_format(count, 0, &key, &task_format)?;
+        let task = &tasks[&key];
+        let task_name = format!("{} - Затрачено {:.2} ч.", &key, task.duration);
 
-        for value in tasks[&key].iter() {
+        worksheet.merge_range(count, 0, count, 4, &task_name, &task_format)?;
+
+        for value in task.employees.iter() {
             count += 1;
-            worksheet.merge_range(count, 0, count, 4, value.0, &mounth_format)?;
-            // worksheet.write_with_format(count, 0, value.0, &mounth_format)?;
+            let cell_name = format!("{} - {:.2} ч.", value.0, sum_duration(&value.1));
+
+            worksheet.merge_range(count, 0, count, 4, &cell_name, &mounth_format)?;
 
             wtire_employees(worksheet, &value.1, count);
             count += value.1.len() as u32 + 1;
@@ -158,38 +148,6 @@ pub fn save_grouped_employees(
 
     Ok(())
 }
-
-// pub fn save_grouped_employees(titles: &[String; 4], tasks: &HashMap<String, Vec<Employee>>, path: &Path) -> Result<(), Box<dyn std::error::Error>> {
-//     let mut workbook = Workbook::new();
-//     let bold_format = Format::new().set_bold();
-//     let merge_format = Format::new()
-//         .set_border(FormatBorder::Thin)
-//         .set_align(FormatAlign::Center);
-
-//     let worksheet = workbook.add_worksheet();
-
-//     worksheet.set_column_width(0, 22)?;
-//     worksheet.set_column_width(1, 14)?;
-//     worksheet.set_column_width(2, 20)?;
-//     worksheet.set_column_width(3, 70)?;
-
-//     for i in 0..titles.len() {
-//         let data = titles.get(i);
-//         worksheet.write_with_format(0, i as u16, data, &bold_format)?;
-//     }
-
-//     let mut count: u32 = 1;
-//     for (key, value) in tasks {
-//         count +=1;
-//         worksheet.merge_range(count, 0, count, 3, key, &merge_format)?;
-
-//         wtire_employees(worksheet, &value, count);
-//         count += value.len() as u32 + 1;
-//     }
-//     workbook.save(path)?;
-
-//     Ok(())
-// }
 
 pub fn read_dir(path: &Path) -> std::io::Result<Vec<PathBuf>> {
     let files: Vec<_> = fs::read_dir(path)?

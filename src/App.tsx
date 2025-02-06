@@ -2,31 +2,33 @@ import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 import { useRef, useState } from "react";
 import { selectFile } from "./helpers/select-file";
+import { useGetVerion } from "./hooks/useGetVerion";
 
 const ERROR_MESSAGE = "Incorrect file";
 
 function App() {
-  const [outputPath, setOutputPath] = useState("");
+  const [outputMsg, setOutputMsg] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const version = useGetVerion();
+
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function start(targetPath?: string) {
     setLoading(true);
     if (timer.current) clearTimeout(timer.current);
-    setOutputPath("");
+    setOutputMsg("");
 
     const response = await invoke("start", { targetPath });
     console.log(response);
     setLoading(false);
-    setOutputPath(String(response));
-    
-    // timer.current = setTimeout(() => setOutputPath(""), 7500);
+    setOutputMsg(String(response));
   }
 
   return (
     <main className="container">
       <h1>Группировка данных</h1>
-
+      <p>Версия {version}</p>
       <p>Выберите файл для создания отчета</p>
 
       <div className="row">
@@ -43,15 +45,13 @@ function App() {
         </button>
       </div>
 
-      {
-        loading && <div className="loading">Идет формирование отчета...</div>
-      }
+      {loading && <div className="loading">Идет формирование отчета...</div>}
 
-      {outputPath &&
-        (outputPath === ERROR_MESSAGE ? (
+      {outputMsg &&
+        (outputMsg === ERROR_MESSAGE ? (
           <div className="result error">Неверный формат файла</div>
         ) : (
-          <div className="result"> Отчет создан - {outputPath}</div>
+          <div className="result">{outputMsg}</div>
         ))}
     </main>
   );

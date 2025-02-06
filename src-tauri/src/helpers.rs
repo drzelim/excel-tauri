@@ -1,5 +1,5 @@
 use crate::file_io::{read_files, save_grouped_employees, add_text_to_filename};
-use crate::models::Employee;
+use crate::models::{Employee, Task};
 use chrono::{Datelike, NaiveDate, NaiveDateTime};
 use std::collections::HashMap;
 
@@ -22,11 +22,11 @@ pub fn merge_duplicates(employees: &Vec<Employee>) -> Vec<Employee> {
 
         if i != 0 {
             entry.3 = format!(
-                "{} \n{} - {} ч.",
-                entry.3, employee.description, employee.duration
+                "{} \n{} - {} | {} ч.",
+                entry.3, employee.description,  employee.date, employee.duration
             );
         } else {
-            entry.3 = format!("{} - {} ч.", employee.description, employee.duration);
+            entry.3 = format!("{} - {} | {} ч. ", employee.description, employee.date, employee.duration);
         }
     }
 
@@ -46,17 +46,17 @@ pub fn merge_duplicates(employees: &Vec<Employee>) -> Vec<Employee> {
 
 pub fn get_grouped_tasks(
     employees: &Vec<Employee>,
-) -> HashMap<String, HashMap<String, Vec<Employee>>> {
-    let mut grouped_tasks: HashMap<String, HashMap<String, Vec<Employee>>> = HashMap::new();
+) -> HashMap<String, Task> {
+    let mut grouped_tasks: HashMap<String, Task> = HashMap::new();
 
     for employee in employees.iter() {
         let entry = grouped_tasks
             .entry(employee.task_name.to_string())
-            .or_insert(HashMap::new());
+            .or_insert(Task {name: employee.task_name.clone(), duration: 0.0, employees: HashMap::new()});
 
         let year_month = format!("{:02}-{:04}", employee.date.month(), employee.date.year());
 
-        let inner_entry = entry.entry(year_month).or_insert(Vec::new());
+        let inner_entry = entry.employees.entry(year_month).or_insert(Vec::new());
 
         inner_entry.push(employee.clone());
     }
@@ -108,6 +108,16 @@ pub fn naive_datetime_to_excel_days(naive_datetime: NaiveDateTime) -> f64 {
     days + fractional_day
 }
 
+pub fn sum_duration(employees: &Vec<Employee>) -> f32 {
+    let mut duration: f32 = 0.0;
+
+    for employee in employees {
+        duration += employee.duration;
+    }
+
+    duration
+}
+
 pub fn create_report(path: &PathBuf) -> String {
     let employees = read_files(path.as_path()).unwrap();
     let file_name = path.to_str().unwrap().split_once("input").unwrap().1;
@@ -117,8 +127,10 @@ pub fn create_report(path: &PathBuf) -> String {
 
     let mut grouped_tasks = get_grouped_tasks(&employees);
 
-    for values in grouped_tasks.values_mut() {
-        for inner_value in values.values_mut() {
+    for task in grouped_tasks.values_mut() {
+        task.sum_duration();
+
+        for inner_value in task.employees.values_mut() {
             *inner_value = merge_duplicates(inner_value);
         }
     }
@@ -134,6 +146,7 @@ pub fn create_report(path: &PathBuf) -> String {
     save_grouped_employees(&title, &grouped_tasks, Path::new(&output_path)).unwrap();
     output_path_str
 }
+
 
 pub fn create_report_with_path(path: &PathBuf) -> String {
     let data = read_files(path.as_path());
@@ -155,13 +168,15 @@ pub fn create_report_with_path(path: &PathBuf) -> String {
 
     let mut grouped_tasks = get_grouped_tasks(&employees);
 
-    for values in grouped_tasks.values_mut() {
-        for inner_value in values.values_mut() {
+    for task in grouped_tasks.values_mut() {
+        task.sum_duration();
+
+        for inner_value in task.employees.values_mut() {
             *inner_value = merge_duplicates(inner_value);
         }
     }
 
-    let title = Vec::from([
+    let titles = Vec::from([
         String::from("Задача"),
         String::from("Имя"),
         String::from("Затраченное время"),
@@ -169,10 +184,10 @@ pub fn create_report_with_path(path: &PathBuf) -> String {
         String::from("Комментарии"),
     ]);
 
-    let result = save_grouped_employees(&title, &grouped_tasks, Path::new(&output_path));
+    let result = save_grouped_employees(&titles, &grouped_tasks, Path::new(&output_path));
 
     match result {
-        Ok(_) => output_path_string,
+        Ok(_) => format!("Отчет создан - {}", output_path_string),
         Err(e) => e.to_string()
     }
 }
