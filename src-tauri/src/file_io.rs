@@ -2,14 +2,15 @@ use crate::{
     helpers::{extract_date_from_row, naive_datetime_to_excel_days, sum_duration},
     models::{Employee, Task},
 };
-use std::{fs, path::PathBuf};
+use std::{fs, path::PathBuf, error::Error};
 use std::{collections::HashMap, path::Path};
 
-use calamine::{open_workbook, DataType, Reader, Xlsx, XlsxError};
+use calamine::{open_workbook_auto, DataType, Reader};
 use rust_xlsxwriter::*;
 
-pub fn read_files(path: &Path) -> Result<Vec<Employee>, XlsxError> {
-    let mut workbook: Xlsx<_> = open_workbook(path).expect("Cannot open file");
+pub fn read_files(path: &Path) -> Result<Vec<Employee>, Box<dyn Error>> {
+
+    let mut workbook = open_workbook_auto(path)?;
 
     let sheet_names = workbook.sheet_names();
     let first_sheet = sheet_names.get(0).unwrap();
@@ -25,11 +26,7 @@ pub fn read_files(path: &Path) -> Result<Vec<Employee>, XlsxError> {
             for row in range.rows() {
                 let first_row_cell = row[0].get_string().unwrap_or("").to_string();
     
-                if first_row_cell == "Проект" {
-                    break;
-                }
-    
-                if first_row_cell == "" || row.is_empty() {
+                if first_row_cell == "Проект" || first_row_cell == "" || row.is_empty() {
                     continue;
                 }
 
@@ -50,7 +47,7 @@ pub fn read_files(path: &Path) -> Result<Vec<Employee>, XlsxError> {
     
             return Ok(employees);
         },
-        Err(e) => Err(e)
+        Err(_) => Ok(Vec::new())
     }
 }
 
@@ -92,7 +89,7 @@ pub fn save_grouped_employees(
     titles: &Vec<String>,
     tasks: &HashMap<String, Task>,
     path: &Path,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn Error>> {
     let mut workbook = Workbook::new();
     let bold_format = Format::new().set_bold();
     let task_format = Format::new()
@@ -164,7 +161,14 @@ pub fn add_text_to_filename(path: &PathBuf, text: &str) -> String {
     if let Some(parent) = path.parent() {
         if let Some(stem) = path.file_stem() {
             if let Some(extension) = path.extension() {
-                let new_filename = format!("{}{}.{}", stem.to_string_lossy(), text, extension.to_string_lossy());
+                let mut extension_string = extension.to_string_lossy().to_string();
+
+                // Если расширение входного файла .xls, то делаем его .xlsx
+                if !extension_string.ends_with('x') {
+                    extension_string = format!("{}{}", extension_string, "x");
+                }
+
+                let new_filename = format!("{}{}.{}", stem.to_string_lossy(), text, extension_string);
                 let new_path = parent.join(new_filename);
                 return new_path.to_string_lossy().to_string();
             }
