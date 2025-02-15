@@ -176,7 +176,7 @@ pub fn create_report_with_path(path: &PathBuf) -> String {
         }
     }
 
-    let titles = Vec::from([
+    let titles = &Vec::from([
         String::from("Задача"),
         String::from("Имя"),
         String::from("Затраченное время"),
@@ -184,7 +184,7 @@ pub fn create_report_with_path(path: &PathBuf) -> String {
         String::from("Комментарии"),
     ]);
 
-    let result = save_grouped_employees(&titles, &grouped_tasks, Path::new(&output_path));
+    let result = save_grouped_employees(titles, &grouped_tasks, Path::new(&output_path));
 
     match result {
         Ok(_) => format!("Отчет создан - {}", output_path_string),

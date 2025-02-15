@@ -20,7 +20,6 @@ function App() {
     setOutputMsg("");
 
     const response = await invoke("start", { targetPath });
-    console.log(response);
     setLoading(false);
     setOutputMsg(String(response));
   }

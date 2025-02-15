@@ -1053,7 +1053,7 @@ dependencies = [
 
 [[package]]
 name = "excel-tauri"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "calamine",
  "chrono",
@@ -3257,9 +3257,9 @@ dependencies = [
 
 [[package]]
 name = "rust_xlsxwriter"
-version = "0.81.0"
+version = "0.83.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56c615b4e9c5b7be8e813d0c286734c8a9f336177810f5f91d4da0fa61ad4b4f"
+checksum = "d4d19605838204ae178ab213ec00c1efdea008de73016e57396f3ee44061b4f5"
 dependencies = [
  "zip",
 ]

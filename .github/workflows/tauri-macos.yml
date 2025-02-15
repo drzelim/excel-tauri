@@ -44,7 +44,7 @@ jobs:
         run: |
           chmod -R a+x "src-tauri/target/release/bundle/macos/excel-tauri.app"
           xattr -rd com.apple.quarantine "src-tauri/target/release/bundle/macos/excel-tauri.app"
-          codesign --force --deep --sign - "src-tauri/target/release/bundle/macos/excel-tauri.app"
+          codesign --force --deep --sign - --options runtime "src-tauri/target/release/bundle/macos/excel-tauri.app"
 
       # Шаг 7: Сохранение собранного приложения как артефакта
       - name: Upload artifact
