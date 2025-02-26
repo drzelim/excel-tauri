@@ -50,5 +50,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tauri-macos
+          name: excel-tauri-macos
           path: src-tauri/target/release/bundle/

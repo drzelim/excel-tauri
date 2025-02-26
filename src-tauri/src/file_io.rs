@@ -32,6 +32,7 @@ pub fn read_files(path: &Path) -> Result<Vec<Employee>, Box<dyn Error>> {
 
                 let name = row.get(6).unwrap().get_string().unwrap_or_default().to_string();
                 let duration = row.get(7).unwrap().get_float().unwrap_or(0.0) as f32;
+                let task_number = row.get(2).unwrap().get_string().unwrap_or("").to_string();
                 let task_name = row.get(3).unwrap().get_string().unwrap_or("").to_string();
                 let date = extract_date_from_row(&row.get(5).unwrap().clone()).unwrap_or_default();
                 let description = row.get(8).unwrap().get_string().unwrap_or("").to_string();
@@ -39,7 +40,7 @@ pub fn read_files(path: &Path) -> Result<Vec<Employee>, Box<dyn Error>> {
                 employees.push(Employee {
                     name,
                     duration,
-                    task_name,
+                    task_name: format!("{} - {}", task_number, task_name),
                     date,
                     description,
                 });
